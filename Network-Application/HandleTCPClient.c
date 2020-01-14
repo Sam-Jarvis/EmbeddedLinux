@@ -127,7 +127,7 @@ void HandleTCPClient (int clntSocket)
     int endpoint = 0x01;
     int timeout = 2000;
 
-    //pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex);
     libusb_init(NULL);
 	h = libusb_open_device_with_vid_pid(NULL, 0x045e, 0x028e);
 
@@ -255,9 +255,10 @@ void HandleTCPClient (int clntSocket)
             printf("Right X: %x %x\n", read_data[10], read_data[11]);
             printf("Right Y: %x %x\n", read_data[12], read_data[13]);
             printf("\n");
+            close_controller(h);
         }
 
-        close_controller(h);
+        
         pthread_mutex_unlock(&mutex);
         /* Echo message back to client 
         if (send (clntSocket, echoBuffer, recvMsgSize, 0) != recvMsgSize)
