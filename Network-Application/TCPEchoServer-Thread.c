@@ -15,6 +15,7 @@ int main (int argc, char *argv[])
     intptr_t         clntSock;     /* Socket descriptor for client */
     pthread_t   threadID;     /* Thread ID from pthread_create() */
     bool        to_quit = false;
+    
 
 
     parse_args (argc, argv);

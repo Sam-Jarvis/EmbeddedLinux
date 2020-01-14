@@ -14,6 +14,8 @@ extern bool             argv_verbose;
 //extern bool             argv_userprefix;
 extern int              argv_nrofdata;
 extern char *           argv_data[];
+extern int              argv_big_rumble;
+extern int              argv_small_rumble;
 
 extern void delaying (void);
 extern void DieWithError(const char * errorMessage);  /* Error handling function */

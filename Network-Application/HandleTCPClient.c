@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <pthread.h>
 #include <ctype.h>      // for isupper() etc.
 #include <sys/socket.h> // for send() and recv()
 #include <unistd.h>     // for sleep(), close()
@@ -10,6 +11,9 @@
 #include "HandleTCPClient.h"
 
 #define RCVBUFSIZE 32   /* Size of receive buffer */
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 int controller_map(int to_map)
 {
@@ -62,15 +66,20 @@ int open_controller(libusb_device_handle * h)
         success += 1;
 	}
 
-	// if(libusb_detach_kernel_driver(h, 0) != 0){
-	// 	perror("Device detach failed\n");
-    //     success += 1;
-	//}
+	if(libusb_detach_kernel_driver(h, 0) != 0){
+		perror("Device detach failed\n");
+        success += 1;
+	}
 
 	if(libusb_claim_interface(h, 0) != 0){
 		perror("Device claim failed\n");
         success += 1;
 	}
+    else
+    {
+        printf("Claim successful\n");
+    }
+    
 
     return success;
 }
@@ -108,7 +117,10 @@ void HandleTCPClient (int clntSocket)
     char * rumble = "f";
     char * read = "r";
     libusb_device_handle *h;
+
 	unsigned char data[] = { 0x01, 0x03, 0x01 };
+    unsigned char data_rumble[8];
+
     int error;
     int transferred;
 
@@ -117,6 +129,7 @@ void HandleTCPClient (int clntSocket)
     int endpoint = 0x01;
     int timeout = 2000;
 
+    //pthread_mutex_lock(&mutex);
     libusb_init(NULL);
 	h = libusb_open_device_with_vid_pid(NULL, 0x045e, 0x028e);
 
@@ -144,11 +157,21 @@ void HandleTCPClient (int clntSocket)
         
         if(strcmp(rumble, echoBuffer) == 0)
         {
-            if ((error = libusb_interrupt_transfer(h, 0x01, data, sizeof(data), &transferred, 2000)) != 0) {
+            data_rumble[0] = 0x00;
+			data_rumble[1] = 0x08;
+			data_rumble[2] = 0x00;
+			data_rumble[3] = 0xFF;
+			data_rumble[4] = 0xFF;
+			data_rumble[5] = 0x00;
+			data_rumble[6] = 0x00;
+			data_rumble[7] = 0x00;
+
+            if ((error = libusb_interrupt_transfer(h, 0x01, data_rumble, sizeof(data_rumble), &transferred, 2000)) != 0) {
                 perror("trans failed");
             }
 
             close_controller(h);
+            //pthread_mutex_unlock(&mutex);
         }
 
         if(strcmp(read, echoBuffer) == 0)
@@ -198,9 +221,12 @@ void HandleTCPClient (int clntSocket)
             printf("Right X: %x %x\n", read_data[10], read_data[11]);
             printf("Right Y: %x %x\n", read_data[12], read_data[13]);
             printf("\n");
+            printf("read_data 2: %x\n", read_data[2]);
+            printf("\n");
         }
 
-        close_controller(h);
+        //close_controller(h);
+        //pthread_mutex_unlock(&mutex);
         /* Echo message back to client 
         if (send (clntSocket, echoBuffer, recvMsgSize, 0) != recvMsgSize)
         {

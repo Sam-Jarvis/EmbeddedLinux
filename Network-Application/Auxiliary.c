@@ -9,7 +9,7 @@
 
 #include "Auxiliary.h"
 
-#define MAX_DATA       10
+#define MAX_DATA       14
 
 char *          argv_ip             = NULL;
 unsigned short  argv_port           = 0;
@@ -22,6 +22,8 @@ bool            argv_debug          = false;
 bool            argv_userprefix     = false;
 int             argv_nrofdata       = 0;
 char *          argv_data[MAX_DATA] = { NULL };
+int             argv_big_rumble     = 0;
+int             argv_small_rumble   = 0;
 
 
 static FILE *   tty_fptr = NULL;
@@ -215,7 +217,7 @@ void parse_args (int argc, char *argv[])
     int opt;
     int i;
     
-    while ((opt = getopt(argc, argv, "i:t:p:y:f:uvdgh")) != -1)
+    while ((opt = getopt(argc, argv, "s:i:t:p:y:f:m:uvdgh")) != -1)
     {
         switch (opt)
         {
@@ -247,6 +249,33 @@ void parse_args (int argc, char *argv[])
             case 'g':
                 argv_debug = true;
                 break;
+
+            case 'm':
+            argv_big_rumble = atoi(optarg);
+
+            if(argv_big_rumble > 16)
+            {
+                argv_big_rumble = 16;
+            }
+            else if(argv_big_rumble < 1)
+            {
+                argv_big_rumble = 1;
+            }
+            break;
+
+            case 's':
+            argv_small_rumble = atoi(optarg);
+
+            if(argv_small_rumble > 16)
+            {
+                argv_small_rumble = 16;
+            }
+            else if(argv_small_rumble < 1)
+            {
+                argv_small_rumble = 1;
+            }
+            break;
+
             case '?':
             case 'h':
                 printf("\noptions: \n"
@@ -263,6 +292,9 @@ void parse_args (int argc, char *argv[])
                     "\n");
                 exit(0);
                 break;
+
+
+
             default:
                 fprintf(stderr, "ERROR: unknown option '%c'\n", opt);
                 exit(1);
