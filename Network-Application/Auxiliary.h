@@ -16,7 +16,7 @@ extern int              argv_nrofdata;
 extern char *           argv_data[];
 extern int              argv_big_rumble;
 extern int              argv_small_rumble;
-extern int              argv_led;
+extern bool              argv_led;
 
 
 extern void delaying (void);

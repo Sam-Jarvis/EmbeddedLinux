@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
 
         // TODO: add code to send this string to the server; use send()
         printf("%s", "send data ~client to server~\n");
-        ssize_t sent = send(sock, echoString, echoStringLen, 0);
+        ssize_t sent = send(sock, echoString, 1, 0);
 
         // TODO: add code to display the transmitted string in verbose mode; use info_s()
         printf("%s", "display transmitted + verbose\n");

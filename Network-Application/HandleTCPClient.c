@@ -10,7 +10,7 @@
 #include "Auxiliary.h"
 #include "HandleTCPClient.h"
 
-#define RCVBUFSIZE 32   /* Size of receive buffer */
+#define RCVBUFSIZE 1   /* Size of receive buffer */
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -112,7 +112,7 @@ void HandleTCPClient (int clntSocket)
 {
     // 'clntSocket' is obtained from AcceptTCPConnection()
 
-    char echoBuffer[RCVBUFSIZE];        /* Buffer for echo string */
+    char echoBuffer[1];        /* Buffer for echo string */
     int  recvMsgSize;                   /* Size of received message */
     libusb_device_handle *h;
 
@@ -134,11 +134,13 @@ void HandleTCPClient (int clntSocket)
     open_controller(h);
 
     /* Receive message from client */
-    recvMsgSize = recv (clntSocket, echoBuffer, RCVBUFSIZE-1, 0);
+    recvMsgSize = recv (clntSocket, echoBuffer, 1, 0);
+    printf("received: %s\n", echoBuffer);
     if (recvMsgSize < 0)
     {
         DieWithError ("recv() failed\n");
     }
+    echoBuffer[1] = '\0';
     info_d ("Recv", recvMsgSize);
 
     /* Send received string and receive again until end of transmission */
@@ -255,6 +257,8 @@ void HandleTCPClient (int clntSocket)
             printf("Right X: %x %x\n", read_data[10], read_data[11]);
             printf("Right Y: %x %x\n", read_data[12], read_data[13]);
             printf("\n");
+
+            memset(read_data, 0, sizeof(read_data));
             close_controller(h);
         }
 

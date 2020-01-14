@@ -24,7 +24,7 @@ int             argv_nrofdata       = 0;
 char *          argv_data[MAX_DATA] = { NULL };
 int             argv_big_rumble     = 0;
 int             argv_small_rumble   = 0;
-int             argv_led            = -1;
+bool            argv_led            = false;
 
 
 
@@ -243,7 +243,8 @@ void parse_args (int argc, char *argv[])
                 argv_verbose = true;
                 break;
             case 'u':
-                argv_userprefix = true;
+                argv_led = true;
+                //argv_userprefix = true;
                 break;
             case 'd':
                 argv_delay = true;
