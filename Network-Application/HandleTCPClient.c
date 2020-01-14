@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <ctype.h>      // for isupper() etc.
 #include <sys/socket.h> // for send() and recv()
@@ -6,14 +7,12 @@
 #include <libusb-1.0/libusb.h>
 #include <string.h>
 
-
 #include "Auxiliary.h"
 #include "HandleTCPClient.h"
 
 #define RCVBUFSIZE 32   /* Size of receive buffer */
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 int controller_map(int to_map)
 {
@@ -100,10 +99,11 @@ int close_controller(libusb_device_handle * h)
     libusb_close(h);
 
     printf("%s\n", "sucessfully closed");
+    
     // if(libusb_attach_kernel_driver(h, 0) != 0){
     //     perror("Device attach failed\n");
     //     success += 1;
-    //}
+    // }
 
     return success;
 }
@@ -114,11 +114,9 @@ void HandleTCPClient (int clntSocket)
 
     char echoBuffer[RCVBUFSIZE];        /* Buffer for echo string */
     int  recvMsgSize;                   /* Size of received message */
-    char * rumble = "f";
-    char * read = "r";
     libusb_device_handle *h;
 
-	unsigned char data[] = { 0x01, 0x03, 0x01 };
+	unsigned char data_led[3];
     unsigned char data_rumble[8];
 
     int error;
@@ -155,28 +153,64 @@ void HandleTCPClient (int clntSocket)
 
         // delaying ();
         
-        if(strcmp(rumble, echoBuffer) == 0)
-        {
-            data_rumble[0] = 0x00;
-			data_rumble[1] = 0x08;
-			data_rumble[2] = 0x00;
-			data_rumble[3] = 0xFF;
-			data_rumble[4] = 0xFF;
-			data_rumble[5] = 0x00;
-			data_rumble[6] = 0x00;
-			data_rumble[7] = 0x00;
+        if(strcmp("f", echoBuffer) == 0)
+        {   
+            data_rumble[0] = 0;
+			data_rumble[1] = 8;
+			data_rumble[2] = 0;
+			data_rumble[3] = 64;
+			data_rumble[4] = 0;
+			data_rumble[5] = 0;
+			data_rumble[6] = 0;
+			data_rumble[7] = 0;
 
             if ((error = libusb_interrupt_transfer(h, 0x01, data_rumble, sizeof(data_rumble), &transferred, 2000)) != 0) {
                 perror("trans failed");
             }
 
+            sleep(1);
+
+            data_rumble[3] = 0;
+            if ((error = libusb_interrupt_transfer(h, 0x01, data_rumble, sizeof(data_rumble), &transferred, 2000)) != 0) {
+                perror("trans failed");
+            }
+
             close_controller(h);
-            //pthread_mutex_unlock(&mutex);
+            pthread_mutex_unlock(&mutex);
+
+            recvMsgSize = recv (clntSocket, echoBuffer, RCVBUFSIZE-1, 0);
+            if (recvMsgSize < 0)      
+            {
+                DieWithError ("recv() failed");
+            }
+            info_d ("recv", recvMsgSize);
         }
 
-        if(strcmp(read, echoBuffer) == 0)
+        if(strcmp("l", echoBuffer) == 0)
         {
-            memset(read_data, 0, sizeof(data));
+            data_led[0] = 1;
+            data_led[1] = 3;
+            data_led[2] = 1;
+
+            printf("Transfer LED\n");
+            if ((error = libusb_interrupt_transfer(h, 0x01, data_led, sizeof(data_led), &transferred, 2000)) != 0) {
+                perror("trans failed");
+            }
+
+            close_controller(h);
+            pthread_mutex_unlock(&mutex);
+
+            recvMsgSize = recv (clntSocket, echoBuffer, RCVBUFSIZE-1, 0);
+            if (recvMsgSize < 0)
+            {
+                DieWithError ("recv() failed");
+            }
+            info_d ("recv", recvMsgSize);
+        }
+
+        if(strcmp("r", echoBuffer) == 0)
+        {
+            memset(read_data, 0, sizeof(data_led));
 			endpoint = 0x81;
 
             printf("%s\n", "Reading controller state ...");
@@ -206,7 +240,7 @@ void HandleTCPClient (int clntSocket)
             trigger_text[7] = "X";
             trigger_text[8] = "Y";
 
-
+            printf("\n");
             printf("Message Type: %x\n", read_data[0]);
             printf("Message Length: %x\n", read_data[1]);
             printf("\n");
@@ -221,12 +255,10 @@ void HandleTCPClient (int clntSocket)
             printf("Right X: %x %x\n", read_data[10], read_data[11]);
             printf("Right Y: %x %x\n", read_data[12], read_data[13]);
             printf("\n");
-            printf("read_data 2: %x\n", read_data[2]);
-            printf("\n");
         }
 
-        //close_controller(h);
-        //pthread_mutex_unlock(&mutex);
+        close_controller(h);
+        pthread_mutex_unlock(&mutex);
         /* Echo message back to client 
         if (send (clntSocket, echoBuffer, recvMsgSize, 0) != recvMsgSize)
         {

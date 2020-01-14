@@ -38,7 +38,7 @@ int main (int argc, char *argv[])
         // TODO: add code to display the transmitted string in verbose mode; use info_s()
         printf("%s", "display transmitted + verbose\n");
         argv_verbose = true;
-        info_s("Transmitted: \n", echoString);
+        info_s("Transmitted: %s\n", echoString);
         
         // TODO: add code to receive & display the converted string from the server
         //       use recv() & printf()
